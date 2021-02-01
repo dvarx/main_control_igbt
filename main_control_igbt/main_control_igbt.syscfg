@@ -2,7 +2,7 @@
  * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
  * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
  * @cliArgs --board "/ti/boards/MSP_EXP432P401R" --product "simplelink_msp432p4_sdk@3.40.01.02"
- * @versions {"data":"2020052512","timestamp":"2020052512","tool":"1.5.0+1397","templates":"2020052512"}
+ * @versions {"data":"2020090214","timestamp":"2020090214","tool":"1.6.0+1543","templates":"2020090214"}
  */
 
 /**
@@ -35,6 +35,9 @@ const GPIO21 = GPIO.addInstance();
 const GPIO22 = GPIO.addInstance();
 const GPIO23 = GPIO.addInstance();
 const GPIO24 = GPIO.addInstance();
+const GPIO25 = GPIO.addInstance();
+const GPIO26 = GPIO.addInstance();
+const GPIO27 = GPIO.addInstance();
 const PWM    = scripting.addModule("/ti/drivers/PWM", {}, false);
 const PWM1   = PWM.addInstance();
 const PWM2   = PWM.addInstance();
@@ -121,6 +124,15 @@ GPIO23.gpioPin.$assign = "boosterpack.6";
 
 GPIO24.$name           = "CONFIG2_GPIO_EN";
 GPIO24.gpioPin.$assign = "boosterpack.26";
+
+GPIO25.$name           = "CONFIG_GPIO_TMPCLK";
+GPIO25.gpioPin.$assign = "boosterpack.9";
+
+GPIO26.$name           = "CONFIG_GPIO_TMPMEAS_A";
+GPIO26.gpioPin.$assign = "boosterpack.10";
+
+GPIO27.$name           = "CONFIG_GPIO_TMPMEAS_B";
+GPIO27.gpioPin.$assign = "boosterpack.30";
 
 PWM1.$name                = "CONFIG_PWM_DUTY";
 PWM1.timer.$assign        = "Timer_A2";
