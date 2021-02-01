@@ -1,0 +1,118 @@
+/**
+ * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
+ * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
+ * @cliArgs --board "/ti/boards/MSP_EXP432P401R" --product "simplelink_msp432p4_sdk@3.40.01.02"
+ * @versions {"data":"2020052512","timestamp":"2020052512","tool":"1.5.0+1397","templates":"2020052512"}
+ */
+
+/**
+ * Import the modules used in this configuration.
+ */
+const ADC    = scripting.addModule("/ti/drivers/ADC", {}, false);
+const ADC1   = ADC.addInstance();
+const GPIO   = scripting.addModule("/ti/drivers/GPIO");
+const GPIO1  = GPIO.addInstance();
+const GPIO2  = GPIO.addInstance();
+const GPIO3  = GPIO.addInstance();
+const GPIO4  = GPIO.addInstance();
+const GPIO5  = GPIO.addInstance();
+const GPIO6  = GPIO.addInstance();
+const GPIO7  = GPIO.addInstance();
+const GPIO8  = GPIO.addInstance();
+const GPIO9  = GPIO.addInstance();
+const GPIO10 = GPIO.addInstance();
+const GPIO11 = GPIO.addInstance();
+const GPIO12 = GPIO.addInstance();
+const GPIO13 = GPIO.addInstance();
+const GPIO14 = GPIO.addInstance();
+const GPIO15 = GPIO.addInstance();
+const PWM    = scripting.addModule("/ti/drivers/PWM", {}, false);
+const PWM1   = PWM.addInstance();
+const PWM2   = PWM.addInstance();
+const RTOS   = scripting.addModule("/ti/drivers/RTOS");
+const Timer  = scripting.addModule("/ti/drivers/Timer", {}, false);
+const Timer1 = Timer.addInstance();
+
+/**
+ * Write custom configuration values to the imported modules.
+ */
+ADC1.$name              = "CONFIG_ADC_ISENSE";
+ADC1.adc.adcPin.$assign = "boosterpack.27";
+
+GPIO1.$name           = "CONFIG_GPIO_HEARTBEAT";
+GPIO1.gpioPin.$assign = "boosterpack.40";
+
+GPIO2.$name     = "CONFIG_GPIO_SW1";
+GPIO2.$hardware = system.deviceData.board.components.S1;
+
+GPIO3.$name     = "CONFIG_GPIO_SW2";
+GPIO3.$hardware = system.deviceData.board.components.S2;
+
+GPIO4.$name           = "CONFIG_GPIO_EN";
+GPIO4.mode            = "Output";
+GPIO4.gpioPin.$assign = "boosterpack.15";
+
+GPIO5.$name           = "CONFIG_GPIO_TOP_RDY_1";
+GPIO5.gpioPin.$assign = "boosterpack.39";
+
+GPIO6.$name           = "CONFIG_GPIO_TOP_RDY_2";
+GPIO6.gpioPin.$assign = "boosterpack.19";
+
+GPIO7.$name           = "CONFIG_GPIO_BOT_RDY_1";
+GPIO7.gpioPin.$assign = "boosterpack.38";
+
+GPIO8.$name           = "CONFIG_GPIO_BOT_RDY_2";
+GPIO8.gpioPin.$assign = "boosterpack.18";
+
+GPIO9.$name           = "CONFIG_GPIO_TOP_FLT";
+GPIO9.gpioPin.$assign = "boosterpack.17";
+
+GPIO10.$name           = "CONFIG_GPIO_BTN_FLT";
+GPIO10.gpioPin.$assign = "boosterpack.36";
+
+GPIO11.$name           = "CONFIG_GPIO_SIGI";
+GPIO11.gpioPin.$assign = "boosterpack.35";
+
+GPIO12.$name           = "CONFIG_GPIO_SIGO";
+GPIO12.gpioPin.$assign = "expansion.14";
+
+GPIO13.$name     = "CONFIG_GPIO_LED_RED";
+GPIO13.$hardware = system.deviceData.board.components.LED2_RED;
+
+GPIO14.$name     = "CONFIG_GPIO_LED_GREEN";
+GPIO14.$hardware = system.deviceData.board.components.LED2_GREEN;
+
+GPIO15.$name     = "CONFIG_GPIO_LED_BLUE";
+GPIO15.$hardware = system.deviceData.board.components.LED2_BLUE;
+
+PWM1.$name                = "CONFIG_PWM_DUTY";
+PWM1.timer.$assign        = "Timer_A2";
+PWM1.timer.pwmPin.$assign = "boosterpack.37";
+
+PWM2.$name         = "CONFIG_PWM_SPEED";
+PWM2.timer.$assign = "Timer_A1";
+
+const Power                   = scripting.addModule("/ti/drivers/Power", {}, false);
+Power.performanceLevel3.$name = "ti_drivers_power_PowerMSP432PerfLevels0";
+Power.performanceLevel2.$name = "ti_drivers_power_PowerMSP432PerfLevels1";
+Power.performanceLevel1.$name = "ti_drivers_power_PowerMSP432PerfLevels2";
+Power.performanceLevel0.$name = "ti_drivers_power_PowerMSP432PerfLevels3";
+
+RTOS.name = "NoRTOS";
+
+Timer1.$name = "CONFIG_TIMER_0";
+
+/**
+ * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
+ * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
+ * re-solve from scratch.
+ */
+ADC1.adc.$suggestSolution             = "ADC14";
+GPIO2.gpioPin.$suggestSolution        = "P1.1.GPIO/EUSCI_A0_SPI.CLK";
+GPIO3.gpioPin.$suggestSolution        = "P1.4.GPIO/EUSCI_B0_SPI.STE";
+GPIO13.gpioPin.$suggestSolution       = "P2.0.GPIO/EUSCI_A1_SPI.STE";
+GPIO14.gpioPin.$suggestSolution       = "P2.1.GPIO/EUSCI_A1_SPI.CLK";
+GPIO15.gpioPin.$suggestSolution       = "P2.2.GPIO/EUSCI_A1_UART.RXD/EUSCI_A1_SPI.SOMI";
+PWM2.timer.pwmPin.$suggestSolution    = "boosterpack.34";
+RTOS.timer0.resource.$suggestSolution = "Timer_A0";
+Timer1.timer.$suggestSolution         = "Timer_A3";
