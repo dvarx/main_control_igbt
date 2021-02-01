@@ -26,9 +26,19 @@ const GPIO12 = GPIO.addInstance();
 const GPIO13 = GPIO.addInstance();
 const GPIO14 = GPIO.addInstance();
 const GPIO15 = GPIO.addInstance();
+const GPIO16 = GPIO.addInstance();
+const GPIO17 = GPIO.addInstance();
+const GPIO18 = GPIO.addInstance();
+const GPIO19 = GPIO.addInstance();
+const GPIO20 = GPIO.addInstance();
+const GPIO21 = GPIO.addInstance();
+const GPIO22 = GPIO.addInstance();
+const GPIO23 = GPIO.addInstance();
+const GPIO24 = GPIO.addInstance();
 const PWM    = scripting.addModule("/ti/drivers/PWM", {}, false);
 const PWM1   = PWM.addInstance();
 const PWM2   = PWM.addInstance();
+const PWM3   = PWM.addInstance();
 const RTOS   = scripting.addModule("/ti/drivers/RTOS");
 const Timer  = scripting.addModule("/ti/drivers/Timer", {}, false);
 const Timer1 = Timer.addInstance();
@@ -37,7 +47,7 @@ const Timer1 = Timer.addInstance();
  * Write custom configuration values to the imported modules.
  */
 ADC1.$name              = "CONFIG_ADC_ISENSE";
-ADC1.adc.adcPin.$assign = "boosterpack.27";
+ADC1.adc.adcPin.$assign = "boosterpack.23";
 
 GPIO1.$name           = "CONFIG_GPIO_HEARTBEAT";
 GPIO1.gpioPin.$assign = "boosterpack.40";
@@ -74,7 +84,7 @@ GPIO11.$name           = "CONFIG_GPIO_SIGI";
 GPIO11.gpioPin.$assign = "boosterpack.35";
 
 GPIO12.$name           = "CONFIG_GPIO_SIGO";
-GPIO12.gpioPin.$assign = "expansion.14";
+GPIO12.gpioPin.$assign = "boosterpack.14";
 
 GPIO13.$name     = "CONFIG_GPIO_LED_RED";
 GPIO13.$hardware = system.deviceData.board.components.LED2_RED;
@@ -85,12 +95,42 @@ GPIO14.$hardware = system.deviceData.board.components.LED2_GREEN;
 GPIO15.$name     = "CONFIG_GPIO_LED_BLUE";
 GPIO15.$hardware = system.deviceData.board.components.LED2_BLUE;
 
+GPIO16.$name           = "CONFIG2_GPIO_TOP_RDY2";
+GPIO16.gpioPin.$assign = "boosterpack.2";
+
+GPIO17.$name           = "CONFIG2_GPIO_TOP_RDY1";
+GPIO17.gpioPin.$assign = "boosterpack.7";
+
+GPIO18.$name           = "CONFIG2_GPIO_BOT_RDY1";
+GPIO18.gpioPin.$assign = "boosterpack.3";
+
+GPIO19.$name           = "CONFIG2_GPIO_BOT_RDY2";
+GPIO19.gpioPin.$assign = "boosterpack.4";
+
+GPIO20.$name           = "CONFIG2_GPIO_SIGO";
+GPIO20.gpioPin.$assign = "boosterpack.24";
+
+GPIO21.$name           = "CONFIG2_GPIO_SIGI";
+GPIO21.gpioPin.$assign = "boosterpack.5";
+
+GPIO22.$name           = "CONFIG2_GPIO_TOP_FLT";
+GPIO22.gpioPin.$assign = "boosterpack.25";
+
+GPIO23.$name           = "CONFIG2_GPIO_BTN_FLT";
+GPIO23.gpioPin.$assign = "boosterpack.6";
+
+GPIO24.$name           = "CONFIG2_GPIO_EN";
+GPIO24.gpioPin.$assign = "boosterpack.26";
+
 PWM1.$name                = "CONFIG_PWM_DUTY";
 PWM1.timer.$assign        = "Timer_A2";
 PWM1.timer.pwmPin.$assign = "boosterpack.37";
 
-PWM2.$name         = "CONFIG_PWM_SPEED";
+PWM2.$name         = "CONFIG_PWM_SPEED_TOP";
 PWM2.timer.$assign = "Timer_A1";
+
+PWM3.$name                = "CONFIG_PWM_SPEED_BTN";
+PWM3.timer.pwmPin.$assign = "boosterpack.31";
 
 const Power                   = scripting.addModule("/ti/drivers/Power", {}, false);
 Power.performanceLevel3.$name = "ti_drivers_power_PowerMSP432PerfLevels0";
@@ -114,5 +154,6 @@ GPIO13.gpioPin.$suggestSolution       = "P2.0.GPIO/EUSCI_A1_SPI.STE";
 GPIO14.gpioPin.$suggestSolution       = "P2.1.GPIO/EUSCI_A1_SPI.CLK";
 GPIO15.gpioPin.$suggestSolution       = "P2.2.GPIO/EUSCI_A1_UART.RXD/EUSCI_A1_SPI.SOMI";
 PWM2.timer.pwmPin.$suggestSolution    = "boosterpack.34";
+PWM3.timer.$suggestSolution           = "Timer_A1";
 RTOS.timer0.resource.$suggestSolution = "Timer_A0";
 Timer1.timer.$suggestSolution         = "Timer_A3";
