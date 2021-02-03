@@ -2,7 +2,7 @@
  * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
  * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
  * @cliArgs --board "/ti/boards/MSP_EXP432P401R" --product "simplelink_msp432p4_sdk@3.40.01.02"
- * @versions {"data":"2020090214","timestamp":"2020090214","tool":"1.6.0+1543","templates":"2020090214"}
+ * @versions {"data":"2020052512","timestamp":"2020052512","tool":"1.5.0+1397","templates":"2020052512"}
  */
 
 /**
@@ -42,6 +42,7 @@ const PWM    = scripting.addModule("/ti/drivers/PWM", {}, false);
 const PWM1   = PWM.addInstance();
 const PWM2   = PWM.addInstance();
 const PWM3   = PWM.addInstance();
+const PWM4   = PWM.addInstance();
 const RTOS   = scripting.addModule("/ti/drivers/RTOS");
 const Timer  = scripting.addModule("/ti/drivers/Timer", {}, false);
 const Timer1 = Timer.addInstance();
@@ -105,7 +106,7 @@ GPIO17.$name           = "CONFIG2_GPIO_TOP_RDY1";
 GPIO17.gpioPin.$assign = "boosterpack.7";
 
 GPIO18.$name           = "CONFIG2_GPIO_BOT_RDY1";
-GPIO18.gpioPin.$assign = "boosterpack.3";
+GPIO18.gpioPin.$assign = "boosterpack.8";
 
 GPIO19.$name           = "CONFIG2_GPIO_BOT_RDY2";
 GPIO19.gpioPin.$assign = "boosterpack.4";
@@ -129,12 +130,12 @@ GPIO25.$name           = "CONFIG_GPIO_TMPCLK";
 GPIO25.gpioPin.$assign = "boosterpack.9";
 
 GPIO26.$name           = "CONFIG_GPIO_TMPMEAS_A";
-GPIO26.gpioPin.$assign = "boosterpack.10";
+GPIO26.gpioPin.$assign = "boosterpack.13";
 
 GPIO27.$name           = "CONFIG_GPIO_TMPMEAS_B";
 GPIO27.gpioPin.$assign = "boosterpack.30";
 
-PWM1.$name                = "CONFIG_PWM_DUTY";
+PWM1.$name                = "CONFIG_PWM_DUTY_A";
 PWM1.timer.$assign        = "Timer_A2";
 PWM1.timer.pwmPin.$assign = "boosterpack.37";
 
@@ -143,6 +144,9 @@ PWM2.timer.$assign = "Timer_A1";
 
 PWM3.$name                = "CONFIG_PWM_SPEED_BTN";
 PWM3.timer.pwmPin.$assign = "boosterpack.31";
+
+PWM4.$name                = "CONFIG_PWM_DUTY_B";
+PWM4.timer.pwmPin.$assign = "boosterpack.3";
 
 const Power                   = scripting.addModule("/ti/drivers/Power", {}, false);
 Power.performanceLevel3.$name = "ti_drivers_power_PowerMSP432PerfLevels0";
@@ -167,5 +171,6 @@ GPIO14.gpioPin.$suggestSolution       = "P2.1.GPIO/EUSCI_A1_SPI.CLK";
 GPIO15.gpioPin.$suggestSolution       = "P2.2.GPIO/EUSCI_A1_UART.RXD/EUSCI_A1_SPI.SOMI";
 PWM2.timer.pwmPin.$suggestSolution    = "boosterpack.34";
 PWM3.timer.$suggestSolution           = "Timer_A1";
+PWM4.timer.$suggestSolution           = "Timer_A1";
 RTOS.timer0.resource.$suggestSolution = "Timer_A0";
 Timer1.timer.$suggestSolution         = "Timer_A3";
