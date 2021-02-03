@@ -1,0 +1,14 @@
+CAMtasticDXP Drill Report
+Serial Number:0000-00-00000
+Drill File: C:\Users\dvarx\git\main_control_igbt\main_control_igbt\altium\igbt_control_adapter\gerber\cam.drl
+Format: 2.3
+Units: English (Inch)
+Step & Repeat Codes Used: NO
+
+
+TOOL		SIZE		COUNT
+====		======		=====
+
+ 1 		0.0157		74
+ 2 		0.0280		48
+ 3 		0.0748		2
