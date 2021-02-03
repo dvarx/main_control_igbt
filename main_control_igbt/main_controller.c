@@ -98,8 +98,8 @@ void init_gpio(void){
     GPIO_setConfig(CONFIG_GPIO_LED_BLUE, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
     GPIO_setConfig(CONFIG_GPIO_SW1, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);
     GPIO_setConfig(CONFIG_GPIO_SW2, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);
-    GPIO_setConfig(CONFIG_GPIO_TOP_FLT, GPIO_CFG_IN_INT_FALLING);
-    GPIO_setConfig(CONFIG_GPIO_BTN_FLT, GPIO_CFG_IN_INT_FALLING);
+    GPIO_setConfig(CONFIG_GPIO_TOP_FLT, GPIO_CFG_IN_NOPULL | GPIO_CFG_IN_INT_FALLING);
+    GPIO_setConfig(CONFIG_GPIO_BTN_FLT, GPIO_CFG_IN_NOPULL | GPIO_CFG_IN_INT_FALLING);
     GPIO_setConfig(CONFIG_GPIO_EN, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
     GPIO_setCallback(CONFIG_GPIO_SW1, callback_btn1);
     GPIO_setCallback(CONFIG_GPIO_SW2, callback_btn2);
@@ -164,12 +164,12 @@ void pwm_init(void){
     pwm_params_speed.periodUnits=PWM_PERIOD_HZ;
     pwm_params_speed.dutyValue=0;
     pwm_params_speed.periodValue = 120000;
-    pwm_handle_speed=PWM_open(CONFIG_PWM_SPEED,&pwm_params_speed);
+    pwm_handle_speed=PWM_open(CONFIG_PWM_SPEED_TOP,&pwm_params_speed);
     if(pwm_handle_speed==NULL){
         while(1){}
     }
     PWM_start(pwm_handle_speed);
-    PWM_setDuty(pwm_handle_speed, PWM_DUTY_FRACTION_MAX*0.75);
+    PWM_setDuty(pwm_handle_speed, PWM_DUTY_FRACTION_MAX*0.5);
 }
 
 //advance state machine
@@ -288,8 +288,6 @@ void *mainThread(void *arg0)
 
     GPIO_enableInt(CONFIG_GPIO_SW1);
     GPIO_enableInt(CONFIG_GPIO_SW2);
-    GPIO_enableInt(CONFIG_GPIO_TOP_FLT);
-    GPIO_enableInt(CONFIG_GPIO_BTN_FLT);
 
     /* Loop forever incrementing the PWM duty */
     while (1) {
