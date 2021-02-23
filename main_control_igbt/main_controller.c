@@ -53,7 +53,8 @@ ADC_Params   adc_params;
 int_fast16_t adc_res;
 uint16_t adcValue0;
 uint32_t adcValue0MicroVolt;
-PWM_Handle pwm_handle_duty = NULL;
+PWM_Handle pwm_handle_duty_a = NULL;
+PWM_Handle pwm_handle_duty_b = NULL;
 PWM_Params pwm_params_duty;
 PWM_Handle pwm_handle_speed = NULL;
 PWM_Params pwm_params_speed;
@@ -152,12 +153,13 @@ void pwm_init(void){
     pwm_params_duty.periodUnits=PWM_PERIOD_HZ;
     pwm_params_duty.dutyValue=0;
     pwm_params_duty.periodValue = 2500;
-    pwm_handle_duty=PWM_open(CONFIG_PWM_DUTY,&pwm_params_duty);
-    if(pwm_handle_duty==NULL){
+    pwm_handle_duty_a=PWM_open(CONFIG_PWM_DUTY_A,&pwm_params_duty);
+    pwm_handle_duty_b=PWM_open(CONFIG_PWM_DUTY_B,&pwm_params_duty);
+    if(pwm_handle_duty_a==NULL){
         while(1){}
     }
-    PWM_start(pwm_handle_duty);
-    PWM_setDuty(pwm_handle_duty, 0);
+    PWM_start(pwm_handle_duty_a);
+    PWM_setDuty(pwm_handle_duty_a, 0);
     //init pwm for speed signal
     PWM_Params_init(&pwm_params_speed);
     pwm_params_speed.dutyUnits=PWM_DUTY_FRACTION;
@@ -169,7 +171,7 @@ void pwm_init(void){
         while(1){}
     }
     PWM_start(pwm_handle_speed);
-    PWM_setDuty(pwm_handle_speed, PWM_DUTY_FRACTION_MAX*0.5);
+    PWM_setDuty(pwm_handle_speed, PWM_DUTY_FRACTION_MAX*0.8);
 }
 
 //advance state machine
@@ -245,19 +247,23 @@ void timerCallback(Timer_Handle myHandle){
     switch(state){
     case INIT:
         GPIO_write(CONFIG_GPIO_EN,0);
-        PWM_setDuty(pwm_handle_duty, 0);
+        PWM_setDuty(pwm_handle_duty_a, 0);
+        PWM_setDuty(pwm_handle_duty_b, 0);
         break;
     case READY:
         GPIO_write(CONFIG_GPIO_EN,0);
-        PWM_setDuty(pwm_handle_duty, 0);
+        PWM_setDuty(pwm_handle_duty_a, 0);
+        PWM_setDuty(pwm_handle_duty_b, 0);
         break;
     case RUNNING:
         GPIO_write(CONFIG_GPIO_EN,1);
-        PWM_setDuty(pwm_handle_duty, PWM_DUTY_FRACTION_MAX/2);
+        PWM_setDuty(pwm_handle_duty_a, PWM_DUTY_FRACTION_MAX/2);
+        PWM_setDuty(pwm_handle_duty_b, PWM_DUTY_FRACTION_MAX/2);
         break;
     case FAULT:
         GPIO_write(CONFIG_GPIO_EN,0);
-        PWM_setDuty(pwm_handle_duty, 0);
+        PWM_setDuty(pwm_handle_duty_a, 0);
+        PWM_setDuty(pwm_handle_duty_b, 0);
         break;
     }
     //update output color
