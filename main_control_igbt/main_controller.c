@@ -54,9 +54,9 @@ int_fast16_t adc_res;
 uint16_t adcValue0;
 uint32_t adcValue0MicroVolt;
 PWM_Handle pwm_handle_duty_a = NULL;
-PWM_Handle pwm_handle_duty_b = NULL;
 PWM_Params pwm_params_duty;
-PWM_Handle pwm_handle_speed = NULL;
+PWM_Handle pwm_handle_speed_top = NULL;
+PWM_Handle pwm_handle_speed_bottom = NULL;
 PWM_Params pwm_params_speed;
 
 
@@ -91,17 +91,36 @@ inline void update_pi_32(struct pi_controller_32 c,float x_new){
 }
 
 void init_gpio(void){
+    //debugging
+    GPIO_setConfig(CONFIG_GPIO_P32, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG_GPIO_TOP_RDY_1, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG_GPIO_TOP_RDY_2, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG_GPIO_BOT_RDY_1, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG_GPIO_BOT_RDY_2, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG_GPIO_SIGI, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG_GPIO_SIGO, GPIO_CFG_IN_NOPULL);
+
+    GPIO_setConfig(CONFIG2_GPIO_TOP_RDY2, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG2_GPIO_TOP_RDY1, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG2_GPIO_BOT_RDY1, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG2_GPIO_BOT_RDY2, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG2_GPIO_SIGO, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG2_GPIO_SIGI, GPIO_CFG_IN_NOPULL);
+
+    GPIO_setConfig(CONFIG_GPIO_TMPCLK, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG_GPIO_TMPMEAS_A, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG_GPIO_TMPMEAS_B, GPIO_CFG_IN_NOPULL);
     //when using a GPIO pin for output, an extra call to GPIO_setConfig is necessary
     GPIO_setConfig(CONFIG_GPIO_HEARTBEAT, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
     GPIO_setConfig(CONFIG_GPIO_LED_RED, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
     GPIO_setConfig(CONFIG_GPIO_LED_GREEN, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
-    GPIO_setConfig(CONFIG_GPIO_EN, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
+    GPIO_setConfig(CONFIG_GPIO_EN, GPIO_CFG_IN_NOPULL);
     GPIO_setConfig(CONFIG_GPIO_LED_BLUE, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
     GPIO_setConfig(CONFIG_GPIO_SW1, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);
     GPIO_setConfig(CONFIG_GPIO_SW2, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);
-    GPIO_setConfig(CONFIG_GPIO_TOP_FLT, GPIO_CFG_IN_NOPULL | GPIO_CFG_IN_INT_FALLING);
-    GPIO_setConfig(CONFIG_GPIO_BTN_FLT, GPIO_CFG_IN_NOPULL | GPIO_CFG_IN_INT_FALLING);
-    GPIO_setConfig(CONFIG_GPIO_EN, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
+    GPIO_setConfig(CONFIG_GPIO_TOP_FLT, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);      //need to be pull up to disable red  diode
+    GPIO_setConfig(CONFIG_GPIO_BTN_FLT, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);      //needs to be pull up to disable red diode
+    GPIO_setConfig(CONFIG2_GPIO_EN, GPIO_CFG_IN_NOPULL);
     GPIO_setCallback(CONFIG_GPIO_SW1, callback_btn1);
     GPIO_setCallback(CONFIG_GPIO_SW2, callback_btn2);
     GPIO_setCallback(CONFIG_GPIO_TOP_FLT, gateDriverFaultCallback);
@@ -154,7 +173,6 @@ void pwm_init(void){
     pwm_params_duty.dutyValue=0;
     pwm_params_duty.periodValue = 2500;
     pwm_handle_duty_a=PWM_open(CONFIG_PWM_DUTY_A,&pwm_params_duty);
-    pwm_handle_duty_b=PWM_open(CONFIG_PWM_DUTY_B,&pwm_params_duty);
     if(pwm_handle_duty_a==NULL){
         while(1){}
     }
@@ -166,12 +184,16 @@ void pwm_init(void){
     pwm_params_speed.periodUnits=PWM_PERIOD_HZ;
     pwm_params_speed.dutyValue=0;
     pwm_params_speed.periodValue = 120000;
-    pwm_handle_speed=PWM_open(CONFIG_PWM_SPEED_TOP,&pwm_params_speed);
-    if(pwm_handle_speed==NULL){
+    pwm_handle_speed_top=PWM_open(CONFIG_PWM_SPEED_TOP,&pwm_params_speed);
+    pwm_handle_speed_bottom=PWM_open(CONFIG_PWM_SPEED_BTN,&pwm_params_speed);
+    //CONFIG_PWM_SPEED_BTN
+    if((pwm_handle_speed_top==NULL)||(pwm_handle_speed_bottom==NULL)){
         while(1){}
     }
-    PWM_start(pwm_handle_speed);
-    PWM_setDuty(pwm_handle_speed, PWM_DUTY_FRACTION_MAX*0.8);
+    PWM_start(pwm_handle_speed_top);
+    PWM_start(pwm_handle_speed_bottom);
+    PWM_setDuty(pwm_handle_speed_top, PWM_DUTY_FRACTION_MAX*0.5);
+    PWM_setDuty(pwm_handle_speed_bottom, PWM_DUTY_FRACTION_MAX*0.5);
 }
 
 //advance state machine
@@ -242,28 +264,27 @@ void timerCallback(Timer_Handle myHandle){
     if(adc_res!=ADC_STATUS_SUCCESS){
         while(1){}
     }
-
     //set main state machine outputs
     switch(state){
     case INIT:
         GPIO_write(CONFIG_GPIO_EN,0);
+        GPIO_write(CONFIG2_GPIO_EN,0);
         PWM_setDuty(pwm_handle_duty_a, 0);
-        PWM_setDuty(pwm_handle_duty_b, 0);
         break;
     case READY:
         GPIO_write(CONFIG_GPIO_EN,0);
+        GPIO_write(CONFIG2_GPIO_EN,0);
         PWM_setDuty(pwm_handle_duty_a, 0);
-        PWM_setDuty(pwm_handle_duty_b, 0);
         break;
     case RUNNING:
         GPIO_write(CONFIG_GPIO_EN,1);
+        GPIO_write(CONFIG2_GPIO_EN,1);
         PWM_setDuty(pwm_handle_duty_a, PWM_DUTY_FRACTION_MAX/2);
-        PWM_setDuty(pwm_handle_duty_b, PWM_DUTY_FRACTION_MAX/2);
         break;
     case FAULT:
         GPIO_write(CONFIG_GPIO_EN,0);
+        GPIO_write(CONFIG2_GPIO_EN,0);
         PWM_setDuty(pwm_handle_duty_a, 0);
-        PWM_setDuty(pwm_handle_duty_b, 0);
         break;
     }
     //update output color
