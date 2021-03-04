@@ -42,9 +42,13 @@
 #include <ti/drivers/Timer.h>
 #include <ti/drivers/GPIO.h>
 #include <ti/drivers/ADC.h>
+#include <ti/drivers/UART.h>
 
 /* Driver configuration */
 #include "ti_drivers_config.h"
+#include "uart_comm.h"
+#include <string.h>
+#include <stdlib.h>
 
 //global variables
 int counter=0;
@@ -58,7 +62,16 @@ PWM_Params pwm_params_duty;
 PWM_Handle pwm_handle_speed_top = NULL;
 PWM_Handle pwm_handle_speed_bottom = NULL;
 PWM_Params pwm_params_speed;
+bool command_to_be_processed;
+UART_Handle uart;
+UART_Params uartParams;
 
+//uart related parameters
+extern uint8_t input_pointer;
+extern char input_buffer[];
+const char SWITCH_STATE[]="!sws";
+const char SET_DUTY_CMD[]="!dut";
+const char SET_FREQ_CMD[]="!frq";
 
 //discrete controller state variables
 struct pi_controller_32{
@@ -72,9 +85,10 @@ struct pi_controller_32{
 
 struct pi_controller_32 current_controller;
 
-enum controller_state{INIT,READY,RUNNING,FAULT};
+enum controller_state{READY,RUNNING,FAULT};
 enum controller_fault_type{NO_FAULT,BOTTOM_IGBT_FAULT,TOP_IGBT_FAULT,OTHER_FAULT};
-enum controller_state state=INIT;
+enum controller_state state=READY;
+enum controller_state next_state=READY;
 enum controller_fault_type fault_type=NO_FAULT;
 
 //function declarations
@@ -89,6 +103,7 @@ inline void update_pi_32(struct pi_controller_32 c,float x_new){
     c.x=x_new;
     c.y=c.state_integrator+c.x;
 }
+
 
 void init_gpio(void){
     //debugging
@@ -114,15 +129,13 @@ void init_gpio(void){
     GPIO_setConfig(CONFIG_GPIO_HEARTBEAT, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
     GPIO_setConfig(CONFIG_GPIO_LED_RED, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
     GPIO_setConfig(CONFIG_GPIO_LED_GREEN, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
-    GPIO_setConfig(CONFIG_GPIO_EN, GPIO_CFG_IN_NOPULL);
+    GPIO_setConfig(CONFIG_GPIO_EN, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_OD_NOPULL);
     GPIO_setConfig(CONFIG_GPIO_LED_BLUE, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW);
     GPIO_setConfig(CONFIG_GPIO_SW1, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);
     GPIO_setConfig(CONFIG_GPIO_SW2, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);
     GPIO_setConfig(CONFIG_GPIO_TOP_FLT, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);      //need to be pull up to disable red  diode
     GPIO_setConfig(CONFIG_GPIO_BTN_FLT, GPIO_CFG_IN_PU | GPIO_CFG_IN_INT_FALLING);      //needs to be pull up to disable red diode
     GPIO_setConfig(CONFIG2_GPIO_EN, GPIO_CFG_IN_NOPULL);
-    GPIO_setCallback(CONFIG_GPIO_SW1, callback_btn1);
-    GPIO_setCallback(CONFIG_GPIO_SW2, callback_btn2);
     GPIO_setCallback(CONFIG_GPIO_TOP_FLT, gateDriverFaultCallback);
     GPIO_setCallback(CONFIG_GPIO_BTN_FLT, gateDriverFaultCallback);
 }
@@ -177,7 +190,7 @@ void pwm_init(void){
         while(1){}
     }
     PWM_start(pwm_handle_duty_a);
-    PWM_setDuty(pwm_handle_duty_a, 0);
+    PWM_setDuty(pwm_handle_duty_a, PWM_DUTY_FRACTION_MAX*0.5);
     //init pwm for speed signal
     PWM_Params_init(&pwm_params_speed);
     pwm_params_speed.dutyUnits=PWM_DUTY_FRACTION;
@@ -196,46 +209,9 @@ void pwm_init(void){
     PWM_setDuty(pwm_handle_speed_bottom, PWM_DUTY_FRACTION_MAX*0.5);
 }
 
-//advance state machine
-void callback_btn1(uint_least8_t index){
-    switch(state){
-    case INIT:      state=READY; break;
-	/*Hint: Errara in PCB
-	- TOP_RDY2 is always low and is therefore not checked
-	- TOP_RDY1 <-> BOT_RDY2
-	- BOT_RDY1 <-> BOT_RDY2
-	- BOT_RDY2 <-> BOT_RDY1
-	*/
-
-//    if( GPIO_read(CONFIG_GPIO_TOP_RDY_1)&
-//                            1 &
-//                            GPIO_read(CONFIG_GPIO_BOT_RDY_1)&
-//                            GPIO_read(CONFIG_GPIO_BOT_RDY_1))
-    case READY:     state=RUNNING; break;
-    case RUNNING:   state=RUNNING; break;
-    case FAULT:     state=INIT; break;
-    default:        state=INIT; break;
-    }
-}
-
-//disadvance state machine
-void callback_btn2(uint_least8_t index){
-    switch(state){
-    case INIT:      state=INIT; break;
-    case READY:     state=INIT; break;
-    case RUNNING:   state=READY; break;
-    default:        state=INIT; break;
-    }
-}
-
 /* sets the output color depending on current state */
 void setOutputColor(void){
     switch(state){
-    case INIT:
-        GPIO_toggle(CONFIG_GPIO_LED_RED);
-        GPIO_toggle(CONFIG_GPIO_LED_GREEN);
-        GPIO_toggle(CONFIG_GPIO_LED_BLUE);
-        break;
     case READY:
         GPIO_write(CONFIG_GPIO_LED_RED,0);
         GPIO_write(CONFIG_GPIO_LED_GREEN,0);
@@ -251,6 +227,26 @@ void setOutputColor(void){
         GPIO_write(CONFIG_GPIO_LED_GREEN,0);
         GPIO_write(CONFIG_GPIO_LED_BLUE,0);
         break;
+    }
+}
+
+void parse_input(uint8_t buffer_size){
+    if(!(strncmp(&input_buffer,SWITCH_STATE,sizeof(SWITCH_STATE)/sizeof(char)-1))){
+        if(state==READY){
+            next_state=RUNNING;
+        }
+        else if(state==RUNNING){
+            next_state=READY;
+        }
+        return;
+    }
+    else if(!(strncmp(input_buffer,SET_DUTY_CMD,sizeof(SET_DUTY_CMD)/sizeof(char)-1))){
+        uint32_t des_dut=(uint32_t)(atoi(input_buffer+sizeof(SET_DUTY_CMD)/sizeof(char)-1));
+        if(des_dut>1024)
+            des_dut=1024;
+        //change duty cycle
+        PWM_setDuty(pwm_handle_duty_a, PWM_DUTY_FRACTION_MAX/1024*des_dut);
+        return;
     }
 }
 
@@ -258,33 +254,25 @@ void setOutputColor(void){
 void timerCallback(Timer_Handle myHandle){
     //toggle GPIO
     GPIO_toggle(CONFIG_GPIO_HEARTBEAT);
-    //measure current
-    adc_res = ADC_convert(adc_handle, &adcValue0);
-    adcValue0MicroVolt = ADC_convertRawToMicroVolts(adc_handle, adcValue0);
-    if(adc_res!=ADC_STATUS_SUCCESS){
-        while(1){}
+    //process command
+    if(command_to_be_processed){
+        parse_input(input_pointer);
+        command_to_be_processed=false;
     }
     //set main state machine outputs
+    state=next_state;
     switch(state){
-    case INIT:
-        GPIO_write(CONFIG_GPIO_EN,0);
-        GPIO_write(CONFIG2_GPIO_EN,0);
-        PWM_setDuty(pwm_handle_duty_a, 0);
-        break;
     case READY:
-        GPIO_write(CONFIG_GPIO_EN,0);
-        GPIO_write(CONFIG2_GPIO_EN,0);
-        PWM_setDuty(pwm_handle_duty_a, 0);
-        break;
-    case RUNNING:
         GPIO_write(CONFIG_GPIO_EN,1);
         GPIO_write(CONFIG2_GPIO_EN,1);
-        PWM_setDuty(pwm_handle_duty_a, PWM_DUTY_FRACTION_MAX/2);
         break;
-    case FAULT:
+    case RUNNING:
         GPIO_write(CONFIG_GPIO_EN,0);
         GPIO_write(CONFIG2_GPIO_EN,0);
-        PWM_setDuty(pwm_handle_duty_a, 0);
+        break;
+    case FAULT:
+        GPIO_write(CONFIG_GPIO_EN,1);
+        GPIO_write(CONFIG2_GPIO_EN,1);
         break;
     }
     //update output color
@@ -302,6 +290,7 @@ void gateDriverFaultCallback(uint_least8_t index){
     state=FAULT;
 }
 
+
 /*
  *  ======== mainThread ========
  *  Task periodically increments the PWM duty for the on board LED.
@@ -312,9 +301,15 @@ void *mainThread(void *arg0)
     init_adc();
     init_timer();
     pwm_init();
+    init_uart();
 
     GPIO_enableInt(CONFIG_GPIO_SW1);
     GPIO_enableInt(CONFIG_GPIO_SW2);
+
+    /* output SMCLK at P7.0 for debugging */
+    P7->DIR |= BIT0;
+    P7->SEL0 |= BIT0;
+    P7->SEL1 &= (~BIT0);
 
     /* Loop forever incrementing the PWM duty */
     while (1) {

@@ -46,6 +46,8 @@ const PWM3   = PWM.addInstance();
 const RTOS   = scripting.addModule("/ti/drivers/RTOS");
 const Timer  = scripting.addModule("/ti/drivers/Timer", {}, false);
 const Timer1 = Timer.addInstance();
+const UART   = scripting.addModule("/ti/drivers/UART", {}, false);
+const UART1  = UART.addInstance();
 
 /**
  * Write custom configuration values to the imported modules.
@@ -64,6 +66,7 @@ GPIO3.$hardware = system.deviceData.board.components.S2;
 
 GPIO4.$name            = "CONFIG_GPIO_EN";
 GPIO4.callbackFunction = "";
+GPIO4.mode             = "Output";
 GPIO4.gpioPin.$assign  = "boosterpack.15";
 
 GPIO5.$name           = "CONFIG_GPIO_TOP_RDY_1";
@@ -164,6 +167,8 @@ RTOS.name = "NoRTOS";
 
 Timer1.$name = "CONFIG_TIMER_0";
 
+UART1.$name = "CONFIG_UART_0";
+
 /**
  * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
  * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
@@ -175,6 +180,9 @@ GPIO3.gpioPin.$suggestSolution        = "P1.4.GPIO/EUSCI_B0_SPI.STE";
 GPIO13.gpioPin.$suggestSolution       = "P2.0.GPIO/EUSCI_A1_SPI.STE";
 GPIO14.gpioPin.$suggestSolution       = "P2.1.GPIO/EUSCI_A1_SPI.CLK";
 GPIO15.gpioPin.$suggestSolution       = "P2.2.GPIO/EUSCI_A1_UART.RXD/EUSCI_A1_SPI.SOMI";
-PWM2.timer.pwmPin.$suggestSolution    = "boosterpack.34";
+PWM2.timer.pwmPin.$suggestSolution    = "boosterpack.11";
 RTOS.timer0.resource.$suggestSolution = "Timer_A0";
 Timer1.timer.$suggestSolution         = "Timer_A3";
+UART1.uart.$suggestSolution           = "EUSCI_A1";
+UART1.uart.txPin.$suggestSolution     = "boosterpack.32";
+UART1.uart.rxPin.$suggestSolution     = "boosterpack.34";
